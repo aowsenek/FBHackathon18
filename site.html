@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+  <head>
+    <title>Path loss</title>
+  </head>
+  <body style="margin: 0; height: 100%;">
+    <div id="drawing" style="width: 100%; height: 100%;"></div>
+  </body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.6/svg.js"></script>
+  <script>
+    var draw = SVG('drawing');
+    var lg = draw.group();
+    var ng = draw.group();
+    function drawNode(text, x, y) {
+      var g = draw.group();
+      ng.add(g);
+      var circle = draw.circle(75).fill('#ccf');
+      var text = draw.text(text).attr({ fill: '#005774' });
+      text.move(circle.bbox().width/2 - text.bbox().width/2,
+                circle.bbox().height/2 - text.bbox().height/2);
+      return g.add(circle).add(text).move(x, y);
+    }
+    function drawLine(node1, node2) {
+      var x1 = node1.cx();
+      var y1 = node1.cy();
+      var x2 = node2.cx();
+      var y2 = node2.cy();
+      var line = draw.line(x1, y1, x2, y2).stroke({ color: '#000', width: 2 });
+      lg.add(line);
+      return line;
+    }
+
+    var nodes = {};
+    var edges = {};
+    nodes["l3"] = drawNode("Leaf 3", 200, 50);
+    nodes["s3"] = drawNode("Spine 3", 100, 150);
+    nodes["s4"] = drawNode("Spine 4", 300, 150);
+    nodes["c1"] = drawNode("Core 1", 100, 250);
+    nodes["c2"] = drawNode("Core 2", 300, 250);
+    nodes["s1"] = drawNode("Spine 1", 100, 350);
+    nodes["s2"] = drawNode("Spine 2", 300, 350);
+    nodes["l1"] = drawNode("Leaf 1", 200, 450);
+
+    edges["l1-s1"] = drawLine(nodes["l1"], nodes["s1"]);
+    edges["l1-s2"] = drawLine(nodes["l1"], nodes["s2"]);
+    edges["s1-s2"] = drawLine(nodes["s1"], nodes["s2"]);
+    edges["s1-c1"] = drawLine(nodes["s1"], nodes["c1"]);
+    edges["s1-c2"] = drawLine(nodes["s1"], nodes["c2"]);
+    edges["s2-c1"] = drawLine(nodes["s2"], nodes["c1"]);
+    edges["s2-c2"] = drawLine(nodes["s2"], nodes["c2"]);
+    edges["c1-c2"] = drawLine(nodes["c1"], nodes["c2"]);
+    edges["c1-s3"] = drawLine(nodes["c1"], nodes["s3"]);
+    edges["c1-s4"] = drawLine(nodes["c1"], nodes["s4"]);
+    edges["c2-s3"] = drawLine(nodes["c2"], nodes["s3"]);
+    edges["c2-s4"] = drawLine(nodes["c2"], nodes["s4"]);
+    edges["s3-s4"] = drawLine(nodes["s3"], nodes["s4"]);
+    edges["s3-l3"] = drawLine(nodes["s3"], nodes["l3"]);
+    edges["s4-l3"] = drawLine(nodes["s4"], nodes["l3"]);
+
+    broken = {};
+
+    window.setInterval(
+      function loadDoc() {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          for(edge in broken) {
+            broken[edge].stroke({ color: '#000', width: 2 });
+          }
+          for(edge of this.responseText.split("\n")) {
+	    if(edge != "") {
+              broken[edge] = edges[edge].stroke({ color: '#f00', width: 2 });
+	    }
+          }
+        }
+      };
+      xhttp.open("GET", "ajax_info.txt", true);
+      xhttp.send();
+    }, 3000)
+  </script>
+</html>
+
